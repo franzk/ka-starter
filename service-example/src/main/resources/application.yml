@@ -1,0 +1,12 @@
+spring:
+  application:
+        name: service-example
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER:http://host.docker.internal:5028/realms/kastarter}
+
+server:
+  port: 5027

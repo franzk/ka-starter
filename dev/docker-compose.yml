@@ -1,0 +1,57 @@
+services:
+  ka-keycloak-db:
+    image: postgres:17
+    container_name: ka-keycloak-db
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - keycloak_pgdata:/var/lib/postgresql/data
+    networks:
+      - ka-dev-net
+
+  ka-keycloak:
+    image: quay.io/keycloak/keycloak:26.2.2
+    container_name: ka-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://ka-keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+    ports:
+      - "5028:8080"
+    depends_on:
+      - ka-keycloak-db
+    volumes:
+      - ../ka-keycloak/:/opt/keycloak/data/import
+      - ../ka-keycloak/theme:/opt/keycloak/themes/ka-theme
+    networks:
+      - ka-dev-net
+
+  ka-smtp-bridge:
+    image: ka-smtp-bridge
+    container_name: ka-smtp-bridge
+    environment:
+      - MAILER_URL=http://host.docker.internal:5030/api/v1/mail
+    build:
+      context: ../ka-smtp-bridge
+    networks:
+      - ka-dev-net
+
+  ka-mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: ka-mailhog
+    ports:
+      - "1026:1025" # SMTP
+      - "5125:8025" # Web UI
+
+networks:
+  ka-dev-net:
+    driver: bridge
+
+volumes:
+  keycloak_pgdata:

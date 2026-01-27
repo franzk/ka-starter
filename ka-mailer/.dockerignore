@@ -1,0 +1,32 @@
+# directories to ignore
+
+.git
+.gradle
+.idea
+.vscode
+build/
+out/
+node_modules/
+
+# files to ignore
+
+_.iml
+_.log
+_.swp
+_.tmp
+\*.bak
+.dockerignore
+
+# OS et utilities
+
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Docker/dev-related
+
+docker-compose*.yml
+Dockerfile.dev
+.env
+*.env

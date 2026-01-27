@@ -1,0 +1,64 @@
+name: Deploy ka-starter (update)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify secrets are defined
+        run: |
+          if [ -z "${{ secrets.SSH_HOST }}" ]; then
+            echo "❌ SSH_HOST is not defined"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SSH_USER }}" ]; then
+            echo "❌ SSH_USER is not defined"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "❌ SSH_PRIVATE_KEY is not defined"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SSH_HOST_PATH }}" ]; then
+            echo "❌ SSH_HOST_PATH is not defined"
+            exit 1
+          fi
+          echo "✅ All secrets are defined"
+          echo "Host: ${{ secrets.SSH_HOST }}"
+          echo "User: ${{ secrets.SSH_USER }}"
+          echo "Path: ${{ secrets.SSH_HOST_PATH }}"
+
+      - name: Deploy via SSH (update only)
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.SSH_HOST_PATH }}"
+
+            echo "ℹ️ GitHub Action runs UPDATE deployments only. INIT is manual."
+
+            # update code from repo
+            BRANCH="${{ github.ref_name }}"
+            git config --global --add safe.directory "$PWD"
+
+            git fetch origin --prune
+
+            echo "🔄 Deploying branch: $BRANCH"
+            git checkout "$BRANCH" || { echo "❌ Checkout failed for branch: $BRANCH"; exit 1; }
+            git pull --ff-only origin "$BRANCH"
+
+            # keep .env (and optionally .env.* if you still have them)
+            git clean -fd -e .env -e .env.*
+
+            git status -sb
+            git log -1 --oneline
+
+            # deploy (UPDATE)
+            chmod +x ./deploy/scripts/*
+            ./deploy/scripts/deploy.sh update
