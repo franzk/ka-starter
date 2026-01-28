@@ -1,0 +1,176 @@
+name: Build Images (Registry)
+
+on:
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/franzk/ka-starter
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read VERSION files
+        id: read-versions
+        run: |
+          echo "JAVA_BASE_BUILDER_VERSION=$(cat infra/base-java/VERSION)" >> $GITHUB_ENV
+          echo "KA_FRONT_VERSION=$(cat ka-front/VERSION)" >> $GITHUB_ENV
+          echo "KA_GATEWAY_VERSION=$(cat ka-gateway/VERSION)" >> $GITHUB_ENV
+          echo "SERVICE_EXAMPLE_VERSION=$(cat service-example/VERSION)" >> $GITHUB_ENV
+          echo "KA_SMTP_BRIDGE_VERSION=$(cat ka-smtp-bridge/VERSION)" >> $GITHUB_ENV
+          echo "KA_MAILER_VERSION=$(cat ka-mailer/VERSION)" >> $GITHUB_ENV
+          echo "KA_KEYCLOAK_VERSION=$(cat ka-keycloak/VERSION)" >> $GITHUB_ENV
+
+      - name: Build and push java-base-builder
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/java-base-builder:${{ env.JAVA_BASE_BUILDER_VERSION }}"
+          echo "Building $IMAGE_TAG"
+          docker build \
+            --build-arg KEYCLOAK_HOST=ka-keycloak:8080 \
+            -t $IMAGE_TAG \
+            infra/base-java
+          docker push $IMAGE_TAG
+          echo "✅ Pushed $IMAGE_TAG"
+
+      - name: Build and push ka-front
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-front:${{ env.KA_FRONT_VERSION }}"
+          echo "Building $IMAGE_TAG"
+          docker build \
+            --build-arg VITE_KEYCLOAK_URL=placeholder \
+            --build-arg VITE_KEYCLOAK_REALM=placeholder \
+            --build-arg VITE_KEYCLOAK_CLIENT_ID=placeholder \
+            --build-arg VITE_API_URL=placeholder \
+            -t $IMAGE_TAG \
+            ka-front
+          docker push $IMAGE_TAG
+          echo "✅ Pushed $IMAGE_TAG"
+
+      - name: Build and push ka-keycloak
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-keycloak:${{ env.KA_KEYCLOAK_VERSION }}"
+          echo "Building $IMAGE_TAG"
+          docker build -t $IMAGE_TAG ka-keycloak
+          docker push $IMAGE_TAG
+          echo "✅ Pushed $IMAGE_TAG"
+
+      - name: Build and push ka-gateway
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-gateway:${{ env.KA_GATEWAY_VERSION }}"
+          echo "Building $IMAGE_TAG"
+          docker build -t $IMAGE_TAG ka-gateway
+          docker push $IMAGE_TAG
+          echo "✅ Pushed $IMAGE_TAG"
+
+      - name: Build and push service-example
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/service-example:${{ env.SERVICE_EXAMPLE_VERSION }}"
+          echo "Building $IMAGE_TAG"
+          docker build -t $IMAGE_TAG service-example
+          docker push $IMAGE_TAG
+          echo "✅ Pushed $IMAGE_TAG"
+
+      - name: Build and push ka-smtp-bridge
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-smtp-bridge:${{ env.KA_SMTP_BRIDGE_VERSION }}"
+          echo "Building $IMAGE_TAG"
+          docker build -t $IMAGE_TAG ka-smtp-bridge
+          docker push $IMAGE_TAG
+          echo "✅ Pushed $IMAGE_TAG"
+
+      - name: Build and push ka-mailer
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-mailer:${{ env.KA_MAILER_VERSION }}"
+          echo "Building $IMAGE_TAG"
+          docker build -t $IMAGE_TAG ka-mailer
+          docker push $IMAGE_TAG
+          echo "✅ Pushed $IMAGE_TAG"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy deployment files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "deploy/"
+          target: "${{ secrets.SSH_HOST_PATH }}/"
+          strip_components: 0
+
+      - name: Setup VPS for Registry mode
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.SSH_HOST_PATH }}"
+            
+            echo "📦 VPS setup for Registry mode"
+            
+            # Rendre les scripts exécutables
+            chmod +x ./deploy/scripts/*.sh
+
+      - name: Display versions summary
+        run: |
+          cat << EOF
+          
+          ═══════════════════════════════════════════════════════
+          ✅ BUILD COMPLETE - Images pushed to ghcr.io
+          ═══════════════════════════════════════════════════════
+          
+          📦 Built versions:
+          
+          • java-base-builder: ${{ env.JAVA_BASE_BUILDER_VERSION }}
+          • ka-front: ${{ env.KA_FRONT_VERSION }}
+          • ka-keycloak: ${{ env.KA_KEYCLOAK_VERSION }}
+          • ka-gateway: ${{ env.KA_GATEWAY_VERSION }}
+          • service-example: ${{ env.SERVICE_EXAMPLE_VERSION }}
+          • ka-smtp-bridge: ${{ env.KA_SMTP_BRIDGE_VERSION }}
+          • ka-mailer: ${{ env.KA_MAILER_VERSION }}
+          
+          ═══════════════════════════════════════════════════════
+          📝 NEXT STEPS for first installation (init):
+          ═══════════════════════════════════════════════════════
+          
+          1. SSH to your VPS
+          2. Configure .env with these versions:
+             
+             JAVA_BASE_BUILDER_IMAGE=ghcr.io/franzk/ka-starter/java-base-builder:${{ env.JAVA_BASE_BUILDER_VERSION }}
+             KA_FRONT_IMAGE=ghcr.io/franzk/ka-starter/ka-front:${{ env.KA_FRONT_VERSION }}
+             KA_KEYCLOAK_IMAGE=ghcr.io/franzk/ka-starter/ka-keycloak:${{ env.KA_KEYCLOAK_VERSION }}
+             KA_GATEWAY_IMAGE=ghcr.io/franzk/ka-starter/ka-gateway:${{ env.KA_GATEWAY_VERSION }}
+             SERVICE_EXAMPLE_IMAGE=ghcr.io/franzk/ka-starter/service-example:${{ env.SERVICE_EXAMPLE_VERSION }}
+             KA_SMTP_BRIDGE_IMAGE=ghcr.io/franzk/ka-starter/ka-smtp-bridge:${{ env.KA_SMTP_BRIDGE_VERSION }}
+             KA_MAILER_IMAGE=ghcr.io/franzk/ka-starter/ka-mailer:${{ env.KA_MAILER_VERSION }}
+          
+          3. Run: DEPLOY_MODE=registry ./deploy/scripts/deploy.sh init
+          
+          ═══════════════════════════════════════════════════════
+          📝 For subsequent updates:
+          ═══════════════════════════════════════════════════════
+          
+          Use the "Deploy (Registry Mode)" workflow which will:
+          - Build new images
+          - Deploy automatically with "update" mode
+          
+          ═══════════════════════════════════════════════════════
+          EOF

@@ -1,0 +1,169 @@
+name: Deploy (Registry Mode)
+
+on:
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/franzk/ka-starter
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    outputs:
+      versions: ${{ steps.collect-versions.outputs.versions }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read VERSION files
+        id: read-versions
+        run: |
+          echo "JAVA_BASE_BUILDER_VERSION=$(cat infra/base-java/VERSION)" >> $GITHUB_ENV
+          echo "KA_FRONT_VERSION=$(cat ka-front/VERSION)" >> $GITHUB_ENV
+          echo "KA_GATEWAY_VERSION=$(cat ka-gateway/VERSION)" >> $GITHUB_ENV
+          echo "SERVICE_EXAMPLE_VERSION=$(cat service-example/VERSION)" >> $GITHUB_ENV
+          echo "KA_SMTP_BRIDGE_VERSION=$(cat ka-smtp-bridge/VERSION)" >> $GITHUB_ENV
+          echo "KA_MAILER_VERSION=$(cat ka-mailer/VERSION)" >> $GITHUB_ENV
+          echo "KA_KEYCLOAK_VERSION=$(cat ka-keycloak/VERSION)" >> $GITHUB_ENV
+
+      - name: Build and push java-base-builder
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/java-base-builder:${{ env.JAVA_BASE_BUILDER_VERSION }}"
+          echo "Building $IMAGE_TAG"
+          docker build \
+            --build-arg KEYCLOAK_HOST=ka-keycloak:8080 \
+            -t $IMAGE_TAG \
+            infra/base-java
+          docker push $IMAGE_TAG
+          echo "✅ Pushed $IMAGE_TAG"
+
+      - name: Build and push ka-front
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-front:${{ env.KA_FRONT_VERSION }}"
+          echo "Building $IMAGE_TAG"
+          docker build \
+            --build-arg VITE_KEYCLOAK_URL=placeholder \
+            --build-arg VITE_KEYCLOAK_REALM=placeholder \
+            --build-arg VITE_KEYCLOAK_CLIENT_ID=placeholder \
+            --build-arg VITE_API_URL=placeholder \
+            -t $IMAGE_TAG \
+            ka-front
+          docker push $IMAGE_TAG
+          echo "✅ Pushed $IMAGE_TAG"
+
+      - name: Build and push ka-keycloak
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-keycloak:${{ env.KA_KEYCLOAK_VERSION }}"
+          echo "Building $IMAGE_TAG"
+          docker build -t $IMAGE_TAG ka-keycloak
+          docker push $IMAGE_TAG
+          echo "✅ Pushed $IMAGE_TAG"
+
+      - name: Build and push ka-gateway
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-gateway:${{ env.KA_GATEWAY_VERSION }}"
+          echo "Building $IMAGE_TAG"
+          docker build -t $IMAGE_TAG ka-gateway
+          docker push $IMAGE_TAG
+          echo "✅ Pushed $IMAGE_TAG"
+
+      - name: Build and push service-example
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/service-example:${{ env.SERVICE_EXAMPLE_VERSION }}"
+          echo "Building $IMAGE_TAG"
+          docker build -t $IMAGE_TAG service-example
+          docker push $IMAGE_TAG
+          echo "✅ Pushed $IMAGE_TAG"
+
+      - name: Build and push ka-smtp-bridge
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-smtp-bridge:${{ env.KA_SMTP_BRIDGE_VERSION }}"
+          echo "Building $IMAGE_TAG"
+          docker build -t $IMAGE_TAG ka-smtp-bridge
+          docker push $IMAGE_TAG
+          echo "✅ Pushed $IMAGE_TAG"
+
+      - name: Build and push ka-mailer
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-mailer:${{ env.KA_MAILER_VERSION }}"
+          echo "Building $IMAGE_TAG"
+          docker build -t $IMAGE_TAG ka-mailer
+          docker push $IMAGE_TAG
+          echo "✅ Pushed $IMAGE_TAG"
+
+      - name: Collect versions summary
+        id: collect-versions
+        run: |
+          cat << EOF > versions-summary.txt
+          📦 Images built and pushed:
+          
+          • java-base-builder: ${{ env.JAVA_BASE_BUILDER_VERSION }}
+          • ka-front: ${{ env.KA_FRONT_VERSION }}
+          • ka-keycloak: ${{ env.KA_KEYCLOAK_VERSION }}
+          • ka-gateway: ${{ env.KA_GATEWAY_VERSION }}
+          • service-example: ${{ env.SERVICE_EXAMPLE_VERSION }}
+          • ka-smtp-bridge: ${{ env.KA_SMTP_BRIDGE_VERSION }}
+          • ka-mailer: ${{ env.KA_MAILER_VERSION }}
+          EOF
+          cat versions-summary.txt
+          
+          # Export for next job
+          echo "versions<<EOF" >> $GITHUB_OUTPUT
+          cat versions-summary.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    
+    steps:
+      - name: Display versions built
+        run: |
+          echo "${{ needs.build-and-push.outputs.versions }}"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy deployment files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "deploy/"
+          target: "${{ secrets.SSH_HOST_PATH }}/"
+          strip_components: 0
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.SSH_HOST_PATH }}"
+            
+            echo "📦 Mode: Registry (pull from ghcr.io)"
+            
+            echo "🔐 Authenticating with GitHub Container Registry..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            echo "🚀 Running deployment (update mode)..."
+            chmod +x ./deploy/scripts/*
+            DEPLOY_MODE=registry ./deploy/scripts/deploy.sh update
+            
+            echo "✅ Deployment complete!"
