@@ -43,7 +43,6 @@ jobs:
           ./deploy/deploy-bundle/scripts/render-realm.sh
         env:
           APP_URL: ${{ secrets.APP_URL }}
-          ENV_FILE: .env
 
       - name: Read VERSION files
         id: read-versions
