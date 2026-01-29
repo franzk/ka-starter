@@ -10,6 +10,9 @@ ENV KC_LOG_LEVEL=info
 # Copy custom theme
 COPY ./theme /opt/keycloak/themes/ka-theme
 
+# Copy realm import file
+COPY realm/realm-import.json /opt/keycloak/data/import/
+
 # Switch to root to set permissions and install scripts
 USER root
 

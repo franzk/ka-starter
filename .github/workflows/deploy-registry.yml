@@ -2,7 +2,15 @@ name: Deploy (Registry Mode)
 
 on:
   workflow_dispatch:
-
+    inputs:
+      mode:
+        description: 'Deployment mode'
+        required: true
+        type: choice
+        options:
+          - init
+          - update
+        default: update
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/franzk/ka-starter
@@ -27,6 +35,15 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Keycloak realm configuration
+        if: github.event.inputs.mode == 'init'
+        run: |
+          chmod +x deploy/deploy-bundle/scripts/render-realm.sh
+          ./deploy/deploy-bundle/scripts/render-realm.sh
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          ENV_FILE: .env
 
       - name: Read VERSION files
         id: read-versions
@@ -155,8 +172,15 @@ jobs:
             echo "🔐 Authenticating with GitHub Container Registry..."
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            echo "🚀 Running deployment (update mode)..."
+            echo "🚀 Running deployment..."
             chmod +x ./scripts/*
-            DEPLOY_MODE=registry ./scripts/deploy.sh update
+            
+            if [ "${{ github.event.inputs.mode }}" = "init" ]; then
+              echo "ℹ️ Performing INIT deployment as requested."
+              DEPLOY_MODE=registry ./scripts/deploy.sh init
+            else
+              echo "ℹ️ Performing UPDATE deployment."
+              DEPLOY_MODE=registry ./scripts/deploy.sh update
+            fi            
             
             echo "✅ Deployment complete!"

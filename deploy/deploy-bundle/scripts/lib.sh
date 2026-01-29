@@ -43,17 +43,17 @@ compose_files_for() {
 
   # Base compose file depends on deployment mode
   if [[ "$deploy_mode" == "registry" ]]; then
-    echo "deploy/docker-compose.registry.yml"
+    echo "./docker-compose.registry.yml"
   else
-    echo "deploy/docker-compose.ssh.yml"
+    echo "./docker-compose.ssh.yml"
   fi
 
   if [[ -n "${PROXY_NETWORK_NAME:-}" ]]; then
-    echo "deploy/docker-compose.overlay-proxy.yml"
+    echo "./docker-compose.overlay-proxy.yml"
   fi
 
   if [[ "$mode" == "init" ]]; then
-    echo "deploy/docker-compose.overlay-init.yml"
+    echo "./docker-compose.overlay-init.yml"
   fi
 }
 
