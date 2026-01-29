@@ -1,0 +1,50 @@
+name: Initialize Registry Deployment
+on:
+    workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy deployment files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "deploy/deploy-bundle/*"
+          target: "${{ secrets.SSH_HOST_PATH }}/"
+          strip_components: 2
+
+      - name: Setup VPS for Registry mode
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.SSH_HOST_PATH }}"
+            
+            echo "📦 VPS setup for Registry mode"
+            
+            # Rendre les scripts exécutables
+            chmod +x ./scripts/*.sh
+            
+            mv ./.env.registry.example ./.env.example
+            rm ./.env.ssh.example
+            rm ./.docker-compose.ssh.yml
+            
+            echo "✅ Initialisation complete !"
+            echo "Next steps : "
+            echo "1. Review and customize the .env.example file as needed."
+            echo "2. Rename .env.example to .env"
+            echo "3. Run Deploy Registry workflow to deploy the application."
+            

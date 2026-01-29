@@ -42,25 +42,18 @@ jobs:
       - name: Build and push java-base-builder
         run: |
           IMAGE_TAG="${{ env.IMAGE_PREFIX }}/java-base-builder:${{ env.JAVA_BASE_BUILDER_VERSION }}"
-          echo "Building $IMAGE_TAG"
-          docker build \
-            --build-arg KEYCLOAK_HOST=ka-keycloak:8080 \
-            -t $IMAGE_TAG \
-            infra/base-java
+          echo "Building $IMAGE_TAG"  
+          # Build and tag both with version and as local 'ka-base-java:latest' for other services
+          docker build -t $IMAGE_TAG -t ka-base-java:latest infra/base-java
           docker push $IMAGE_TAG
           echo "✅ Pushed $IMAGE_TAG"
+          echo "✅ Tagged locally as ka-base-java:latest for dependent services"
 
       - name: Build and push ka-front
         run: |
           IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-front:${{ env.KA_FRONT_VERSION }}"
           echo "Building $IMAGE_TAG"
-          docker build \
-            --build-arg VITE_KEYCLOAK_URL=placeholder \
-            --build-arg VITE_KEYCLOAK_REALM=placeholder \
-            --build-arg VITE_KEYCLOAK_CLIENT_ID=placeholder \
-            --build-arg VITE_API_URL=placeholder \
-            -t $IMAGE_TAG \
-            ka-front
+          docker build -t $IMAGE_TAG ka-front
           docker push $IMAGE_TAG
           echo "✅ Pushed $IMAGE_TAG"
 
@@ -143,9 +136,9 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "deploy/"
+          source: "deploy/deploy-bundle/*"
           target: "${{ secrets.SSH_HOST_PATH }}/"
-          strip_components: 0
+          strip_components: 2
 
       - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1.0.0
@@ -163,7 +156,7 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             echo "🚀 Running deployment (update mode)..."
-            chmod +x ./deploy/scripts/*
-            DEPLOY_MODE=registry ./deploy/scripts/deploy.sh update
+            chmod +x ./scripts/*
+            DEPLOY_MODE=registry ./scripts/deploy.sh update
             
             echo "✅ Deployment complete!"
