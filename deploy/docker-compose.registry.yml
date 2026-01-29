@@ -12,6 +12,11 @@ services:
   ka-front:
     image: ghcr.io/franzk/ka-starter/ka-front:${KA_FRONT_VERSION}
     container_name: ka-front
+    environment:
+      VITE_KEYCLOAK_URL: ${KEYCLOAK_URL}
+      VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM}
+      VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID}
+      VITE_API_URL: ${VITE_API_URL}
     pull_policy: always
     depends_on:
       - ka-gateway

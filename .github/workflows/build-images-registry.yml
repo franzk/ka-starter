@@ -51,13 +51,7 @@ jobs:
         run: |
           IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-front:${{ env.KA_FRONT_VERSION }}"
           echo "Building $IMAGE_TAG"
-          docker build \
-            --build-arg VITE_KEYCLOAK_URL=placeholder \
-            --build-arg VITE_KEYCLOAK_REALM=placeholder \
-            --build-arg VITE_KEYCLOAK_CLIENT_ID=placeholder \
-            --build-arg VITE_API_URL=placeholder \
-            -t $IMAGE_TAG \
-            ka-front
+          docker build -t $IMAGE_TAG ka-front
           docker push $IMAGE_TAG
           echo "✅ Pushed $IMAGE_TAG"
 
