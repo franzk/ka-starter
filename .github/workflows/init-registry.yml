@@ -40,7 +40,7 @@ jobs:
             
             mv ./.env.registry.example ./.env.example
             rm ./.env.ssh.example
-            rm ./.docker-compose.ssh.yml
+            rm ./docker-compose.ssh.yml
             
             echo "✅ Initialisation complete !"
             echo "Next steps : "
