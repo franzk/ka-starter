@@ -46,7 +46,6 @@ jobs:
           echo "✅ Pushed $IMAGE_TAG"
           echo "✅ Tagged locally as ka-base-java:latest for dependent services"
 
-
       - name: Build and push ka-front
         run: |
           IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-front:${{ env.KA_FRONT_VERSION }}"
