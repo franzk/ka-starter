@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # Go to repo root
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/../../.."
+# SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# cd "$SCRIPT_DIR/../../.."
 
 ls -la .
 
