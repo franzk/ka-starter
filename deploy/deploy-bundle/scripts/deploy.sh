@@ -4,6 +4,8 @@ set -euo pipefail
 # Go to repo root (deploy/deploy-bundle/scripts -> repo root)
 cd "$(dirname "$0")/../../.."
 
+ls -la .
+
 MODE="${1:-update}" # init|update
 DEPLOY_MODE="${DEPLOY_MODE:-ssh}" # ssh|registry TODO : make this a param?
 
@@ -24,11 +26,11 @@ case "$DEPLOY_MODE" in
 esac
 
 # shellcheck disable=SC1091
-source "./deploy/deploy-bundle/scripts/lib.sh"
+source "./scripts/lib.sh"
 
 # Optionally load .env.prod
-if [[ -f "/deploy/deploy-bundle/.env.prod" ]]; then
-  load_env ".env.prod"
+if [[ -f "./.env.prod" ]]; then
+  load_env "./.env.prod"
 else
   echo "❌ .env.prod not found in deploy/deploy-bundle. Aborting."
   exit 1
@@ -39,8 +41,8 @@ PROJECT="${PROJECT:-ka-starter}"
 
 # Only for init: generate realm-import.json from realm-template.json + APP_URL
 if [[ "$MODE" == "init" ]]; then
-  chmod +x "./deploy/deploy-bundle/scripts/render-realm.sh"
-  ./deploy/deploy-bundle/scripts/render-realm.sh
+  chmod +x "./scripts/render-realm.sh"
+  ./scripts/render-realm.sh
 fi
 
 mapfile -t COMPOSE_FILES < <(compose_files_for "$MODE" "$DEPLOY_MODE")
