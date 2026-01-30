@@ -41,10 +41,10 @@ fi
 PROJECT="${PROJECT:-ka-starter}"
 
 # Only for init: generate realm-import.json from realm-template.json + APP_URL
-if [[ "$MODE" == "init" ]]; then
-  chmod +x "./scripts/render-realm.sh"
-  ./scripts/render-realm.sh
-fi
+# if [[ "$MODE" == "init" ]]; then
+#   chmod +x "./scripts/render-realm.sh"
+#   ./scripts/render-realm.sh
+# fi
 
 mapfile -t COMPOSE_FILES < <(compose_files_for "$MODE" "$DEPLOY_MODE")
 
