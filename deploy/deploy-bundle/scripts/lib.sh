@@ -72,10 +72,9 @@ assert_proxy_network_exists_if_needed() {
 docker_compose_up() {
   local project="${1:?project required}"
   local deploy_mode="${2:?deploy_mode required}"
-  local env_file="${3:?env_file required}"
   shift 2
 
-  local -a args=(--env-file "$env_file" -p "$project")
+  local -a args=(-p "$project")
 
   echo "🔧 Using deploy mode: $deploy_mode"
 

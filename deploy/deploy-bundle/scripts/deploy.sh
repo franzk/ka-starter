@@ -49,6 +49,6 @@ echo "-> Project: $PROJECT"
 echo "-> Compose files:"
 printf "  - %s\n" "${COMPOSE_FILES[@]}"
 
-docker_compose_up "$PROJECT" "$DEPLOY_MODE" ".env" "${COMPOSE_FILES[@]}"
+docker_compose_up "$PROJECT" "$DEPLOY_MODE" "${COMPOSE_FILES[@]}"
 
 echo "✅ Deployment complete."
