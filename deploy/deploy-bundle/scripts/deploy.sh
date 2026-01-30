@@ -26,9 +26,12 @@ esac
 # shellcheck disable=SC1091
 source "./deploy/deploy-bundle/scripts/lib.sh"
 
-# Optionally load .env (for local development)
-if [[ -f ".env" ]]; then
-  load_env ".env"
+# Optionally load .env.prod
+if [[ -f "/deploy/deploy-bundle/.env.prod" ]]; then
+  load_env ".env.prod"
+else
+  echo "❌ .env.prod not found in deploy/deploy-bundle. Aborting."
+  exit 1
 fi
 
 # Defaults AFTER load_env
