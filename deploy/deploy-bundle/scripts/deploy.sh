@@ -23,14 +23,6 @@ esac
 # shellcheck disable=SC1091
 source "./scripts/lib.sh"
 
-# Optionally load .env.prod
-if [[ -f "./.env.prod" ]]; then
-  load_env "./.env.prod"
-else
-  echo "❌ .env.prod not found in deploy/deploy-bundle. Aborting."
-  exit 1
-fi
-
 # Defaults AFTER load_env
 PROJECT="${PROJECT:-ka-starter}"
 
