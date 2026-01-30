@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Go to repo root
-cd "$(git rev-parse --show-toplevel)"
+# Go to repo root (deploy/deploy-bundle/scripts -> repo root)
+cd "$(dirname "$0")/../../.."
 
 MODE="${1:-update}" # init|update
 DEPLOY_MODE="${DEPLOY_MODE:-ssh}" # ssh|registry TODO : make this a param?
@@ -26,8 +26,10 @@ esac
 # shellcheck disable=SC1091
 source "./deploy/deploy-bundle/scripts/lib.sh"
 
-# Always load .env
-load_env ".env"
+# Optionally load .env (for local development)
+if [[ -f ".env" ]]; then
+  load_env ".env"
+fi
 
 # Defaults AFTER load_env
 PROJECT="${PROJECT:-ka-starter}"
