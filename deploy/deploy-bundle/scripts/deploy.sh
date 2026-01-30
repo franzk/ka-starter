@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Go to repo root (deploy/deploy-bundle/scripts -> repo root)
-cd "$(dirname "$0")/../../.."
+# Go to repo root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/../../.."
 
 ls -la .
 
