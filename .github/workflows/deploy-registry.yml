@@ -16,15 +16,15 @@ env:
   IMAGE_PREFIX: ghcr.io/franzk/ka-starter
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    outputs:
-      versions: ${{ steps.collect-versions.outputs.versions }}
-
+#  build-and-push:
+#    runs-on: ubuntu-latest
+#    permissions:
+#      contents: read
+#      packages: write
+#
+#    outputs:
+#      versions: ${{ steps.collect-versions.outputs.versions }}
+#
 #    steps:
 #      - name: Checkout code
 #        uses: actions/checkout@v4
