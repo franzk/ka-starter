@@ -82,14 +82,16 @@ docker_compose_up() {
     args+=(-f "$f")
   done
 
-  echo "🚀 docker compose ${args[*]} up -d --force-recreate"
+
   docker compose "${args[@]}" pull || true
   
   # Use --build for SSH mode, skip for registry mode
   if [[ "${DEPLOY_MODE:-ssh}" == "ssh" ]]; then
     docker compose "${args[@]}" up -d --build --force-recreate
+    echo "🚀 docker compose ${args[*]} up -d --build --force-recreate"
   else
     docker compose "${args[@]}" up -d
+    echo "🚀 docker compose ${args[*]} up -d"
   fi
   
   docker compose "${args[@]}" ps
