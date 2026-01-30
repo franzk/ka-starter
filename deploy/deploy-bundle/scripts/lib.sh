@@ -71,10 +71,13 @@ assert_proxy_network_exists_if_needed() {
 
 docker_compose_up() {
   local project="${1:?project required}"
-  local env_file="${2:?env_file required}"
+  local deploy_mode="${2:?deploy_mode required}"
+  local env_file="${3:?env_file required}"
   shift 2
 
   local -a args=(--env-file "$env_file" -p "$project")
+
+  echo "🔧 Using deploy mode: $deploy_mode"
 
   assert_proxy_network_exists_if_needed
 
@@ -86,12 +89,12 @@ docker_compose_up() {
   docker compose "${args[@]}" pull || true
   
   # Use --build for SSH mode, skip for registry mode
-  if [[ "${DEPLOY_MODE:-ssh}" == "ssh" ]]; then
-    docker compose "${args[@]}" up -d --build --force-recreate
+  if [[ "${deploy_mode:-ssh}" == "ssh" ]]; then
     echo "🚀 docker compose ${args[*]} up -d --build --force-recreate"
+    docker compose "${args[@]}" up -d --build --force-recreate
   else
-    docker compose "${args[@]}" up -d
     echo "🚀 docker compose ${args[*]} up -d"
+    docker compose "${args[@]}" up -d
   fi
   
   docker compose "${args[@]}" ps

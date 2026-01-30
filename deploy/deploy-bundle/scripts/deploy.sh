@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Go to repo root
-# SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# cd "$SCRIPT_DIR/../../.."
-
-ls -la .
-
 MODE="${1:-update}" # init|update
 DEPLOY_MODE="${DEPLOY_MODE:-ssh}" # ssh|registry TODO : make this a param?
 
@@ -40,6 +34,7 @@ fi
 # Defaults AFTER load_env
 PROJECT="${PROJECT:-ka-starter}"
 
+#  peut etre pour ssh
 # Only for init: generate realm-import.json from realm-template.json + APP_URL
 # if [[ "$MODE" == "init" ]]; then
 #   chmod +x "./scripts/render-realm.sh"
@@ -54,6 +49,6 @@ echo "-> Project: $PROJECT"
 echo "-> Compose files:"
 printf "  - %s\n" "${COMPOSE_FILES[@]}"
 
-docker_compose_up "$PROJECT" ".env" "${COMPOSE_FILES[@]}"
+docker_compose_up "$PROJECT" "$DEPLOY_MODE" ".env" "${COMPOSE_FILES[@]}"
 
 echo "✅ Deployment complete."
