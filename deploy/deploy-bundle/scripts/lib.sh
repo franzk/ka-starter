@@ -84,8 +84,8 @@ docker_compose_up() {
     args+=(-f "$f")
   done
 
-
-  docker compose "${args[@]}" pull || true
+  echo "🚀 docker compose ${args[*]} pull"
+  docker compose "${args[@]}" pull
   
   # Use --build for SSH mode, skip for registry mode
   if [[ "${deploy_mode:-ssh}" == "ssh" ]]; then
