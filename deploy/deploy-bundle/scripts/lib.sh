@@ -89,7 +89,7 @@ docker_compose_up() {
   if [[ "${DEPLOY_MODE:-ssh}" == "ssh" ]]; then
     docker compose "${args[@]}" up -d --build --force-recreate
   else
-    docker compose "${args[@]}" up -d --force-recreate
+    docker compose "${args[@]}" up -d
   fi
   
   docker compose "${args[@]}" ps
