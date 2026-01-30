@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Go to repo root (deploy/scripts -> repo root)
-cd "$(dirname "$0")/../.."
+# Go to repo root
+cd "$(git rev-parse --show-toplevel)"
 
 MODE="${1:-update}" # init|update
 DEPLOY_MODE="${DEPLOY_MODE:-ssh}" # ssh|registry TODO : make this a param?
@@ -24,7 +24,7 @@ case "$DEPLOY_MODE" in
 esac
 
 # shellcheck disable=SC1091
-source "./scripts/lib.sh"
+source "./deploy/deploy-bundle/scripts/lib.sh"
 
 # Always load .env
 load_env ".env"
@@ -34,7 +34,8 @@ PROJECT="${PROJECT:-ka-starter}"
 
 # Only for init: generate realm-import.json from realm-template.json + APP_URL
 if [[ "$MODE" == "init" ]]; then
-  ./scripts/render-realm.sh
+  chmod +x "./deploy/deploy-bundle/scripts/render-realm.sh"
+  ./deploy/deploy-bundle/scripts/render-realm.sh
 fi
 
 mapfile -t COMPOSE_FILES < <(compose_files_for "$MODE" "$DEPLOY_MODE")

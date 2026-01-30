@@ -6,7 +6,7 @@ load_env() {
 
   if [[ ! -f "$env_file" ]]; then
     echo "❌ $env_file not found."
-    exit 1
+    exit 0
   fi
 
   # Portable .env loader.
