@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")/../.."
+# Aller à la racine du projet (où se trouve ka-keycloak/)
+cd "$(git rev-parse --show-toplevel)"
 
 # --- preflight: perl ---
 if ! command -v perl >/dev/null 2>&1; then
