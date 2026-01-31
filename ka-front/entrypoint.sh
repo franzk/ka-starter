@@ -7,7 +7,7 @@ CONFIG_FILE="/usr/share/nginx/html/config.js"
 echo "🔧 Franz Ka Touch: Injecting variables into $CONFIG_FILE"
 
 # Liste explicite des variables pour ne pas corrompre le reste du JS
-VARS_TO_SUBST='$KEYCLOAK_URL $KEYCLOAK_REALM $KEYCLOAK_CLIENT_ID $API_URL'
+VARS_TO_SUBST='$VITE_KEYCLOAK_URL $VITE_KEYCLOAK_REALM $VITE_KEYCLOAK_CLIENT_ID $VITE_API_URL'
 
 # Substitution "In-place" sécurisée via un fichier temporaire
 if [ -f "$CONFIG_FILE" ]; then
