@@ -23,7 +23,8 @@ esac
 # shellcheck disable=SC1091
 source "./scripts/lib.sh"
 
-# Load .env file
+# Load .env file (remove Windows CRLF line endings if present)
+tr -d '\r' < .env > .env.tmp && mv .env.tmp .env
 set -a; source .env; set +a
 
 # Defaults AFTER load_env
