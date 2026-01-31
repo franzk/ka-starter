@@ -56,60 +56,87 @@ jobs:
       - name: Build and push java-base-builder
         run: |
           IMAGE_TAG="${{ env.IMAGE_PREFIX }}/java-base-builder:${{ env.JAVA_BASE_BUILDER_VERSION }}"
-          echo "Building $IMAGE_TAG"
-          # Build and tag both with version and as local 'ka-base-java:latest' for other services
-          docker build -t $IMAGE_TAG -t ka-base-java:latest infra/base-java
-          docker push $IMAGE_TAG
-          echo "✅ Pushed $IMAGE_TAG"
-          echo "✅ Tagged locally as ka-base-java:latest for dependent services"
+          if docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
+            echo "⏭️ $IMAGE_TAG already exists, skipping build"
+          else
+            # Build and tag both with version and as local 'ka-base-java:latest' for other services
+            echo "Building $IMAGE_TAG"
+            docker build -t $IMAGE_TAG -t ka-base-java:latest infra/base-java
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          fi
 
       - name: Build and push ka-front
         run: |
           IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-front:${{ env.KA_FRONT_VERSION }}"
-          echo "Building $IMAGE_TAG"
-          docker build -t $IMAGE_TAG ka-front
-          docker push $IMAGE_TAG
-          echo "✅ Pushed $IMAGE_TAG"
+          if docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
+            echo "⏭️ $IMAGE_TAG already exists, skipping build"
+          else
+            echo "Building $IMAGE_TAG"
+            docker build -t $IMAGE_TAG ka-front
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          fi
 
       - name: Build and push ka-keycloak
         run: |
           IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-keycloak:${{ env.KA_KEYCLOAK_VERSION }}"
-          echo "Building $IMAGE_TAG"
-          docker build -t $IMAGE_TAG ka-keycloak
-          docker push $IMAGE_TAG
-          echo "✅ Pushed $IMAGE_TAG"
+          if docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
+            echo "⏭️ $IMAGE_TAG already exists, skipping build"
+          else
+            echo "Building $IMAGE_TAG"
+            docker build -t $IMAGE_TAG ka-keycloak
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          fi
 
       - name: Build and push ka-gateway
         run: |
           IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-gateway:${{ env.KA_GATEWAY_VERSION }}"
-          echo "Building $IMAGE_TAG"
-          docker build -t $IMAGE_TAG ka-gateway
-          docker push $IMAGE_TAG
-          echo "✅ Pushed $IMAGE_TAG"
+          if docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
+            echo "⏭️ $IMAGE_TAG already exists, skipping build"
+          else
+            echo "Building $IMAGE_TAG"
+            docker build -t $IMAGE_TAG ka-gateway
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          fi
 
       - name: Build and push service-example
         run: |
           IMAGE_TAG="${{ env.IMAGE_PREFIX }}/service-example:${{ env.SERVICE_EXAMPLE_VERSION }}"
-          echo "Building $IMAGE_TAG"
-          docker build -t $IMAGE_TAG service-example
-          docker push $IMAGE_TAG
-          echo "✅ Pushed $IMAGE_TAG"
+          if docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
+            echo "⏭️ $IMAGE_TAG already exists, skipping build"
+          else
+            echo "Building $IMAGE_TAG"
+            docker build -t $IMAGE_TAG service-example
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          fi
 
       - name: Build and push ka-smtp-bridge
         run: |
           IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-smtp-bridge:${{ env.KA_SMTP_BRIDGE_VERSION }}"
-          echo "Building $IMAGE_TAG"
-          docker build -t $IMAGE_TAG ka-smtp-bridge
-          docker push $IMAGE_TAG
-          echo "✅ Pushed $IMAGE_TAG"
+          if docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
+            echo "⏭️ $IMAGE_TAG already exists, skipping build"
+          else
+            echo "Building $IMAGE_TAG"
+            docker build -t $IMAGE_TAG ka-smtp-bridge
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          fi
 
       - name: Build and push ka-mailer
         run: |
           IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-mailer:${{ env.KA_MAILER_VERSION }}"
-          echo "Building $IMAGE_TAG"
-          docker build -t $IMAGE_TAG ka-mailer
-          docker push $IMAGE_TAG
-          echo "✅ Pushed $IMAGE_TAG"
+          if docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
+            echo "⏭️ $IMAGE_TAG already exists, skipping build"
+          else
+            echo "Building $IMAGE_TAG"
+            docker build -t $IMAGE_TAG ka-mailer
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          fi
 
 
   deploy:
