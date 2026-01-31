@@ -127,11 +127,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: |
-            deploy/deploy-bundle/docker-compose.registry.yml
-            deploy/deploy-bundle/docker-compose.overlay-init.yml
-            deploy/deploy-bundle/docker-compose.overlay-proxy.yml
-            deploy/deploy-bundle/scripts/
+          source: "deploy/deploy-bundle/docker-compose.registry.yml,deploy/deploy-bundle/docker-compose.overlay-init.yml,deploy/deploy-bundle/docker-compose.overlay-proxy.yml,deploy/deploy-bundle/scripts/"
           target: "${{ secrets.SSH_HOST_PATH }}/"
           strip_components: 2
 
