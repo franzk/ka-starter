@@ -28,6 +28,31 @@ compose_files_for() {
 }
 
 #
+# Inject environment variables from .env file to ka-front config
+#
+inject_env_to_ka_front() {
+  # 1. On charge les variables du .env (si ce n'est pas déjà fait)
+  if [ -f .env ]; then
+      export $(grep -v '^#' .env | xargs)
+  fi
+
+  # 2. On définit le chemin vers ton fichier de config
+  # Adapte le chemin selon l'endroit où ton front est stocké sur le VPS
+  FRONT_CONFIG_PATH="./ka-front/public/config.js"
+
+  echo "🔧 Rendering front configuration..."
+
+  # 3. Le fameux envsubst (en ciblant uniquement tes variables pour ne pas casser le JS)
+  # On crée un fichier temporaire pour ne pas vider le fichier source en cas d'erreur
+  envsubst '$KEYCLOAK_URL $KEYCLOAK_REALM $KEYCLOAK_CLIENT_ID $API_URL' \
+      < "$FRONT_CONFIG_PATH" > "${FRONT_CONFIG_PATH}.tmp" && \
+      mv "${FRONT_CONFIG_PATH}.tmp" "$FRONT_CONFIG_PATH"
+
+  echo "✅ Front configuration ready."
+}
+
+
+#
 # Assert that the proxy network exists if PROXY_NETWORK_NAME is set
 #
 assert_proxy_network_exists_if_needed() {

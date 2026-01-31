@@ -1,19 +1,23 @@
 #!/bin/sh
 set -e
 
-# replace placeholders in config.js with actual environment variables
-export KEYCLOAK_URL="${VITE_KEYCLOAK_URL}"
-export KEYCLOAK_REALM="${VITE_KEYCLOAK_REALM}"
-export KEYCLOAK_CLIENT_ID="${VITE_KEYCLOAK_CLIENT_ID}"
-export API_URL="${VITE_API_URL}"
+# Chemin du fichier généré par le build de Vite dans le container
+CONFIG_FILE="/usr/share/nginx/html/config.js"
 
-envsubst "${KEYCLOAK_URL} ${KEYCLOAK_REALM} ${KEYCLOAK_CLIENT_ID} ${API_URL}" \
-  < /usr/share/nginx/html/config.js \
-  > /usr/share/nginx/html/config.js.tmp
+echo "🔧 Franz Ka Touch: Injecting variables into $CONFIG_FILE"
 
-mv /usr/share/nginx/html/config.js.tmp /usr/share/nginx/html/config.js
+# Liste explicite des variables pour ne pas corrompre le reste du JS
+VARS_TO_SUBST='$KEYCLOAK_URL $KEYCLOAK_REALM $KEYCLOAK_CLIENT_ID $API_URL'
 
-echo "✅ Config updated with runtime environment variables"
+# Substitution "In-place" sécurisée via un fichier temporaire
+if [ -f "$CONFIG_FILE" ]; then
+    envsubst "$VARS_TO_SUBST" < "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && \
+    mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+    echo "✅ Configuration successful."
+else
+    echo "⚠️ Warning: $CONFIG_FILE not found, skipping injection."
+fi
 
-# Démarrer Nginx
+# On passe la main au processus principal (Nginx)
+# 'exec' permet à Nginx de recevoir les signaux d'arrêt (SIGTERM) proprement
 exec nginx -g 'daemon off;'

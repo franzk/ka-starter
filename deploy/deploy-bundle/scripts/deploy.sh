@@ -37,6 +37,8 @@ PROJECT="${PROJECT:-ka-starter}"
 #   ./scripts/render-realm.sh
 # fi
 
+inject_env_to_ka_front
+
 mapfile -t COMPOSE_FILES < <(compose_files_for "$MODE" "$DEPLOY_MODE")
 
 echo "-> Deployment mode: $DEPLOY_MODE"
