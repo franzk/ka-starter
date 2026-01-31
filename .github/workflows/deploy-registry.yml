@@ -75,8 +75,24 @@ jobs:
           # En mode init, toujours rebuilder pour inclure le realm généré
           if [ "${{ github.event.inputs.mode }}" = "init" ]; then
             echo "🔄 Mode init: forcing rebuild to include generated realm"
-            chmod +x deploy/deploy-bundle/scripts/render-realm.sh
-            ./deploy/deploy-bundle/scripts/render-realm.sh
+
+            # Créer le dossier cible s'il n'existe pas
+            mkdir -p ka-keycloak/realm
+            
+            # Charger les variables
+            SOURCE="ka-keycloak/realm-template.json"
+            TARGET="ka-keycloak/realm/realm-import.json"
+            PLACEHOLDER="https://app.change.me"
+            NEW_URL="${{ secrets.APP_URL }}"
+  
+            # Copier le template vers la cible et remplacer la chaîne
+            # On utilise '|' comme séparateur pour gérer les '/' de l'URL
+            sed "s|$PLACEHOLDER|$NEW_URL|g" "$SOURCE" > "$TARGET"
+            
+            echo "✅ Realm rendered from $SOURCE to $TARGET"
+            echo "🔗 URL updated to: $NEW_URL"
+  
+          
             echo "✅ Generated Keycloak realm configuration for initialisation."
             docker build -t $IMAGE_TAG ka-keycloak
             docker push $IMAGE_TAG
