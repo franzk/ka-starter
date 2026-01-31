@@ -33,15 +33,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate Keycloak realm configuration
-        if: github.event.inputs.mode == 'init'
-        run: |
-          chmod +x deploy/deploy-bundle/scripts/render-realm.sh
-          ./deploy/deploy-bundle/scripts/render-realm.sh
-          echo "✅ Generated Keycloak realm configuration for initialisation."
-        env:
-          APP_URL: ${{ secrets.APP_URL }}
-
       - name: Read VERSION files
         id: read-versions
         run: |
@@ -81,7 +72,16 @@ jobs:
       - name: Build and push ka-keycloak
         run: |
           IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-keycloak:${{ env.KA_KEYCLOAK_VERSION }}"
-          if docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
+          # En mode init, toujours rebuilder pour inclure le realm généré
+          if [ "${{ github.event.inputs.mode }}" = "init" ]; then
+            echo "🔄 Mode init: forcing rebuild to include generated realm"
+            chmod +x deploy/deploy-bundle/scripts/render-realm.sh
+            ./deploy/deploy-bundle/scripts/render-realm.sh
+            echo "✅ Generated Keycloak realm configuration for initialisation."
+            docker build -t $IMAGE_TAG ka-keycloak
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          elif docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
             echo "⏭️ $IMAGE_TAG already exists, skipping build"
           else
             echo "Building $IMAGE_TAG"
@@ -89,6 +89,8 @@ jobs:
             docker push $IMAGE_TAG
             echo "✅ Pushed $IMAGE_TAG"
           fi
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
 
       - name: Build and push ka-gateway
         run: |
