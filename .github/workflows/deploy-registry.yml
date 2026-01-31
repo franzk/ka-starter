@@ -22,9 +22,6 @@ jobs:
       contents: read
       packages: write
 
-    outputs:
-      versions: ${{ steps.collect-versions.outputs.versions }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,6 +38,7 @@ jobs:
         run: |
           chmod +x deploy/deploy-bundle/scripts/render-realm.sh
           ./deploy/deploy-bundle/scripts/render-realm.sh
+          echo "✅ Generated Keycloak realm configuration for initialisation."
         env:
           APP_URL: ${{ secrets.APP_URL }}
 
@@ -113,35 +111,12 @@ jobs:
           docker push $IMAGE_TAG
           echo "✅ Pushed $IMAGE_TAG"
 
-      - name: Collect versions summary
-        id: collect-versions
-        run: |
-          cat << EOF > versions-summary.txt
-          📦 Images built and pushed:
-
-          • java-base-builder: ${{ env.JAVA_BASE_BUILDER_VERSION }}
-          • ka-front: ${{ env.KA_FRONT_VERSION }}
-          • ka-keycloak: ${{ env.KA_KEYCLOAK_VERSION }}
-          • ka-gateway: ${{ env.KA_GATEWAY_VERSION }}
-          • service-example: ${{ env.SERVICE_EXAMPLE_VERSION }}
-          • ka-smtp-bridge: ${{ env.KA_SMTP_BRIDGE_VERSION }}
-          • ka-mailer: ${{ env.KA_MAILER_VERSION }}
-          EOF
-          cat versions-summary.txt
-
-          # Export for next job
-          echo "versions<<EOF" >> $GITHUB_OUTPUT
-          cat versions-summary.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
 
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push
     
     steps:
-      - name: Display versions built
-        run: |
-          echo "${{ needs.build-and-push.outputs.versions }}"
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -152,7 +127,11 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "deploy/deploy-bundle/*"
+          source: |
+            deploy/deploy-bundle/docker-compose.registry.yml
+            deploy/deploy-bundle/docker-compose.overlay-init.yml
+            deploy/deploy-bundle/docker-compose.overlay-proxy.yml
+            deploy/deploy-bundle/scripts/
           target: "${{ secrets.SSH_HOST_PATH }}/"
           strip_components: 2
 
@@ -176,10 +155,10 @@ jobs:
             
             if [ "${{ github.event.inputs.mode }}" = "init" ]; then
               echo "ℹ️ Performing INIT deployment as requested."
-              DEPLOY_MODE=registry ./scripts/deploy.sh init
+              DEPLOY_MODE=registry ./scripts/deploy.sh registry init
             else
               echo "ℹ️ Performing UPDATE deployment."
-              DEPLOY_MODE=registry ./scripts/deploy.sh update
+              DEPLOY_MODE=registry ./scripts/deploy.sh registry update
             fi            
             
             echo "✅ Deployment complete!"

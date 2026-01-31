@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MODE="${1:-update}" # init|update
-DEPLOY_MODE="${DEPLOY_MODE:-ssh}" # ssh|registry TODO : make this a param?
+DEPLOY_MODE="${1:-ssh}" # ssh|registry
+MODE="${2:-update}" # init|update
 
 case "$MODE" in
   init|update) ;;
@@ -22,6 +22,9 @@ esac
 
 # shellcheck disable=SC1091
 source "./scripts/lib.sh"
+
+# Load .env file
+set -a; source .env; set +a
 
 # Defaults AFTER load_env
 PROJECT="${PROJECT:-ka-starter}"

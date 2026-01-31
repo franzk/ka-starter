@@ -1,42 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-load_env() {
-  local env_file="${1:?env_file required}"
-
-  if [[ ! -f "$env_file" ]]; then
-    echo "❌ $env_file not found."
-    exit 0
-  fi
-
-  # Portable .env loader.
-  # Supports simple KEY=VALUE lines and ignores comments/blank lines.
-  # Does not try to interpret quotes/escapes; keep .env simple.
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    # remove CR if present (Windows line endings)
-    line="${line%$'\r'}"
-
-    [[ -z "$line" ]] && continue
-    [[ "$line" == \#* ]] && continue
-    [[ "$line" != *"="* ]] && continue
-
-    local key="${line%%=*}"
-    local val="${line#*=}"
-
-    # trim spaces around key
-    key="${key#"${key%%[![:space:]]*}"}"
-    key="${key%"${key##*[![:space:]]}"}"
-
-    # remove trailing CR/LF from value
-    val="${val%$'\r'}"
-    val="${val%$'\n'}"
-
-    [[ -n "$key" && -z "${!key:-}" ]] && export "$key=$val"
-  done < "$env_file"
-
-  echo "✅ Loaded environment variables from $env_file"
-}
-
+#
+# Determine which docker-compose files to use based on mode and deploy_mode
+# Arguments:
+#   mode: init|update
+#   deploy_mode: ssh|registry
+#
 compose_files_for() {
   local mode="${1:?mode required}" # init|update
   local deploy_mode="${2:-ssh}"    # ssh|registry
@@ -57,6 +27,9 @@ compose_files_for() {
   fi
 }
 
+#
+# Assert that the proxy network exists if PROXY_NETWORK_NAME is set
+#
 assert_proxy_network_exists_if_needed() {
   if [[ -n "${PROXY_NETWORK_NAME:-}" ]]; then
     echo "🌐 Proxy mode enabled: PROXY_NETWORK_NAME=$PROXY_NETWORK_NAME"
@@ -69,6 +42,11 @@ assert_proxy_network_exists_if_needed() {
   fi
 }
 
+#
+# Run docker compose up with the given project name, deploy mode, and compose files
+# Arguments:
+#   project: Docker compose project name
+#   deploy_mode: ssh|registry
 docker_compose_up() {
   local project="${1:?project required}"
   local deploy_mode="${2:?deploy_mode required}"
