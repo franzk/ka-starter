@@ -2,6 +2,7 @@ interface AppConfig {
   keycloakUrl?: string
   keycloakRealm?: string
   keycloakClientId?: string
+  apiUrl?: string
 }
 
 declare global {
