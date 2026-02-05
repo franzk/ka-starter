@@ -1,0 +1,189 @@
+name: Deploy (Registry Mode)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Deployment mode'
+        required: true
+        type: choice
+        options:
+          - init
+          - update
+        default: update
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read VERSION files
+        id: read-versions
+        run: |
+          echo "KA_FRONT_VERSION=$(cat ka-front/VERSION)" >> $GITHUB_ENV
+          echo "KA_GATEWAY_VERSION=$(cat ka-gateway/VERSION)" >> $GITHUB_ENV
+          echo "SERVICE_EXAMPLE_VERSION=$(cat service-example/VERSION)" >> $GITHUB_ENV
+          echo "KA_SMTP_BRIDGE_VERSION=$(cat ka-smtp-bridge/VERSION)" >> $GITHUB_ENV
+          echo "KA_MAILER_VERSION=$(cat ka-mailer/VERSION)" >> $GITHUB_ENV
+          echo "KA_KEYCLOAK_VERSION=$(cat ka-keycloak/VERSION)" >> $GITHUB_ENV
+
+      - name: Build and push ka-front
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-front:${{ env.KA_FRONT_VERSION }}"
+          if docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
+            echo "⏭️ $IMAGE_TAG already exists, skipping build"
+          else
+            echo "Building $IMAGE_TAG"
+            docker build -t $IMAGE_TAG ka-front
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          fi
+
+      - name: Build and push ka-keycloak
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-keycloak:${{ env.KA_KEYCLOAK_VERSION }}"
+          # In init mode, always rebuild to include the generated realm
+          if [ "${{ inputs.mode }}" = "init" ]; then
+            echo "🔄 Mode init: forcing rebuild to include generated realm"
+
+            # Create target directory if it doesn't exist
+            mkdir -p ka-keycloak/realm
+            
+            # Set variables
+            SOURCE="ka-keycloak/realm-template.json"
+            TARGET="ka-keycloak/realm/realm-import.json"
+            PLACEHOLDER="https://app.change.me"
+            NEW_URL="${{ secrets.APP_URL }}"
+  
+            # Copy template to target and replace the placeholder
+            # Using '|' as separator to handle '/' in URLs
+            sed "s|$PLACEHOLDER|$NEW_URL|g" "$SOURCE" > "$TARGET"
+            
+            echo "✅ Realm rendered from $SOURCE to $TARGET"
+            echo "🔗 URL updated to: $NEW_URL"
+
+          
+            echo "✅ Generated Keycloak realm configuration for initialisation."
+            docker build -t $IMAGE_TAG ka-keycloak
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          elif docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
+            echo "⏭️ $IMAGE_TAG already exists, skipping build"
+          else
+            echo "Building $IMAGE_TAG"
+            docker build -t $IMAGE_TAG ka-keycloak
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          fi
+
+      - name: Build and push ka-gateway
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-gateway:${{ env.KA_GATEWAY_VERSION }}"
+          if docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
+            echo "⏭️ $IMAGE_TAG already exists, skipping build"
+          else
+            echo "Building $IMAGE_TAG"
+            docker build -t $IMAGE_TAG ka-gateway
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          fi
+
+      - name: Build and push service-example
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/service-example:${{ env.SERVICE_EXAMPLE_VERSION }}"
+          if docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
+            echo "⏭️ $IMAGE_TAG already exists, skipping build"
+          else
+            echo "Building $IMAGE_TAG"
+            docker build -t $IMAGE_TAG service-example
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          fi
+
+      - name: Build and push ka-smtp-bridge
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-smtp-bridge:${{ env.KA_SMTP_BRIDGE_VERSION }}"
+          if docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
+            echo "⏭️ $IMAGE_TAG already exists, skipping build"
+          else
+            echo "Building $IMAGE_TAG"
+            docker build -t $IMAGE_TAG ka-smtp-bridge
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          fi
+
+      - name: Build and push ka-mailer
+        run: |
+          IMAGE_TAG="${{ env.IMAGE_PREFIX }}/ka-mailer:${{ env.KA_MAILER_VERSION }}"
+          if docker manifest inspect $IMAGE_TAG > /dev/null 2>&1; then
+            echo "⏭️ $IMAGE_TAG already exists, skipping build"
+          else
+            echo "Building $IMAGE_TAG"
+            docker build -t $IMAGE_TAG ka-mailer
+            docker push $IMAGE_TAG
+            echo "✅ Pushed $IMAGE_TAG"
+          fi
+
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy deployment files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "deploy/deploy-bundle/docker-compose.registry.yml,deploy/deploy-bundle/docker-compose.overlay-init.yml,deploy/deploy-bundle/docker-compose.overlay-proxy.yml,deploy/deploy-bundle/scripts/"
+          target: "${{ secrets.SSH_HOST_PATH }}/"
+          strip_components: 2
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.SSH_HOST_PATH }}"
+            
+            echo "📦 Mode: Registry (pull from ghcr.io)"
+            
+            echo "🔐 Authenticating with GitHub Container Registry..."
+            echo "${{ secrets.REGISTRY_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            echo "🚀 Running deployment..."
+            chmod +x ./scripts/*
+            
+            if [ "${{ inputs.mode }}" = "init" ]; then
+              echo "ℹ️ Performing INIT deployment as requested."
+              DEPLOY_MODE=registry ./scripts/deploy.sh registry init
+            else
+              echo "ℹ️ Performing UPDATE deployment."
+              DEPLOY_MODE=registry ./scripts/deploy.sh registry update
+            fi            
+            
+            echo "✅ Deployment complete!"

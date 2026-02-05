@@ -1,0 +1,49 @@
+// Import variables
+@use '@/assets/stylesheets/variables.scss' as *;
+
+:root {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+  font-weight: 300;
+  color-scheme: dark;
+  color: $color-primary;
+  background-color: $color-secondary;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  max-width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: $color-primary;
+
+  &:hover {
+    color: $color-accent;
+  }
+
+  &:visited {
+    color: $color-primary;
+  }
+}
+
+#app {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}

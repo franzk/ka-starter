@@ -1,0 +1,51 @@
+name: Initialize Registry Deployment
+on:
+  workflow_dispatch:
+
+jobs:
+  copy-files-and-setup-server:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy deployment files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "deploy/deploy-bundle/docker-compose.overlay-init.yml,deploy/deploy-bundle/docker-compose.overlay-proxy.yml,deploy/deploy-bundle/docker-compose.registry.yml,deploy/deploy-bundle/.env.registry.example,deploy/deploy-bundle/scripts/"
+          target: "${{ secrets.SSH_HOST_PATH }}/"
+          strip_components: 2
+
+      - name: Setup server for Registry mode
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.SSH_HOST_PATH }}"
+
+            echo "📦 server setup for Registry mode"
+
+            # Make scripts executable (some files might not end with .sh)
+            chmod +x ./scripts/* || true
+
+            # Create .env only if missing (do not overwrite existing config)
+            if [ ! -f .env ]; then
+              cp .env.registry.example .env
+              echo "✅ Created .env from .env.registry.example"
+            else
+              echo "ℹ️ .env already exists, leaving it untouched."
+            fi
+
+            echo "✅ Initialization complete!"
+            echo "Next steps:"
+            echo "1) Review and customize the .env file as needed on the server."
+            echo "2) GitHub → Actions → Deploy (Registry Mode) → Run workflow → choose 'init'"

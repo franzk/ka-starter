@@ -1,0 +1,4 @@
+services:
+  ka-keycloak:
+    # Import any json file found in /opt/keycloak/data/import
+    command: ["start", "--http-enabled=true", "--proxy-headers=xforwarded", "--import-realm"]

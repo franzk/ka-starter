@@ -1,0 +1,123 @@
+services:
+  # =====================
+  # KA-FRONT (Vue.js + Nginx)
+  # =====================
+  ka-front:
+    image: ghcr.io/franzk/ka-starter/ka-front:${KA_FRONT_VERSION}
+    container_name: ka-front
+    pull_policy: always
+    depends_on:
+      - ka-gateway
+      - ka-keycloak
+    networks:
+      - ka-network
+
+  # =====================
+  # KEYCLOAK (Java + Postgres)
+  # =====================
+  ka-keycloak-db:
+    image: postgres:17
+    container_name: ka-keycloak-db
+    environment:
+      POSTGRES_DB: ka-keycloak
+      POSTGRES_USER: ka-keycloak
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
+    volumes:
+      - ka_keycloak_pgdata:/var/lib/postgresql/data
+    networks:
+      - ka-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ka-keycloak -d ka-keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ka-keycloak:
+    image: ghcr.io/franzk/ka-starter/ka-keycloak:${KA_KEYCLOAK_VERSION}
+    container_name: ka-keycloak
+    pull_policy: always
+    command: ["start", "--http-enabled=true", "--proxy-headers=xforwarded"]
+    environment:
+      # Database
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://ka-keycloak-db:5432/ka-keycloak
+
+      KC_DB_USERNAME: ka-keycloak
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
+
+      KC_HOSTNAME: ${KEYCLOAK_URL}
+      KC_HOSTNAME_ADMIN: ${KEYCLOAK_URL}
+    ports:
+      - "8080:8080"
+    depends_on:
+      ka-keycloak-db:
+        condition: service_healthy
+    networks:
+      - ka-network
+    restart: unless-stopped
+
+  # =====================
+  # KA-GATEWAY (Spring Boot)
+  # =====================
+  ka-gateway:
+    image: ghcr.io/franzk/ka-starter/ka-gateway:${KA_GATEWAY_VERSION}
+    container_name: ka-gateway
+    pull_policy: always
+    environment:
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
+      BACK_URL: ${BACK_URL}
+      APP_URL: ${APP_URL}
+    networks:
+      - ka-network
+
+  # =================================
+  # SERVICE-EXAMPLE (Spring Boot)
+  # =================================
+  service-example:
+    image: ghcr.io/franzk/ka-starter/service-example:${SERVICE_EXAMPLE_VERSION}
+    container_name: service-example
+    pull_policy: always
+    environment:
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
+    networks:
+      - ka-network
+
+  # =====================
+  # SMTP Bridge (Node.js)
+  # =====================
+  ka-smtp-bridge:
+    image: ghcr.io/franzk/ka-starter/ka-smtp-bridge:${KA_SMTP_BRIDGE_VERSION}
+    container_name: ka-smtp-bridge
+    pull_policy: always
+    environment:
+      MAILER_URL: ${MAILER_URL}
+    networks:
+      - ka-network
+
+  # =====================
+  # MAILER (Spring Boot)
+  # =====================
+  ka-mailer:
+    image: ghcr.io/franzk/ka-starter/ka-mailer:${KA_MAILER_VERSION}
+    container_name: ka-mailer
+    pull_policy: always
+    environment:
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_AUTH: ${SMTP_AUTH}
+      SMTP_SSL: ${SMTP_SSL}
+    networks:
+      - ka-network
+
+volumes:
+  ka_keycloak_pgdata:
+
+networks:
+  ka-network:
+    name: ka-network

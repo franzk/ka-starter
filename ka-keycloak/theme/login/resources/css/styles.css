@@ -1,0 +1,297 @@
+/* Base form styling */
+#kc-content {
+	max-width: 400px;
+	margin: 0 auto;
+	padding: 40px 20px;
+	background-color: transparent;
+	color: #fff;
+}
+
+.card-pf {
+	background-color: transparent;
+	box-shadow: none;
+}
+
+form {
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	display: flex;
+	flex-direction: column;
+	gap: 30px;
+}
+
+a {
+	color: #ccc;
+	text-decoration: none;
+	transition: color 0.3s ease;
+}
+
+a:hover {
+	color: #fff;
+}
+
+/* Label styling */
+form label {
+	font-weight: 300;
+	margin-bottom: 8px;
+	color: #ccc;
+	font-size: 14px;
+	letter-spacing: 0.5px;
+}
+
+#input-error,
+.pf-m-error {
+	color: #ff0000;
+	font-weight: 600;
+}
+
+/* Text input styling */
+form input[type="text"],
+form input[type="password"] {
+	width: 100%;
+	padding: 12px 0;
+	border: none;
+	border-bottom: 1px solid #fff;
+	border-radius: 0;
+	font-size: 16px;
+	background-color: transparent;
+	color: #fff;
+	box-sizing: border-box;
+	transition: border-bottom-color 0.3s ease;
+}
+
+form input[type="text"]:focus,
+form input[type="password"]:focus {
+	border-bottom-color: #fff;
+	outline: none;
+}
+
+/* Neutralize autofill styles */
+form input[type="text"]:-webkit-autofill,
+form input[type="password"]:-webkit-autofill,
+form input[type="text"]:-webkit-autofill:hover,
+form input[type="password"]:-webkit-autofill:hover,
+form input[type="text"]:-webkit-autofill:focus,
+form input[type="password"]:-webkit-autofill:focus,
+form input[type="text"]:-webkit-autofill:active,
+form input[type="password"]:-webkit-autofill:active {
+	-webkit-box-shadow: 0 0 0px 1000px #111 inset !important;
+	-webkit-text-fill-color: #fff !important;
+	background-color: transparent !important;
+	background-image: none !important;
+	border: none !important;
+	border-bottom: 1px solid #fff !important;
+	border-radius: 0 !important;
+	transition: background-color 5000s ease-in-out 0s !important;
+}
+
+/* Submit button styling */
+form input[type="submit"] {
+	width: 100%;
+	padding: 12px;
+	background-color: transparent !important;
+	color: #fff;
+	border: 1px solid #fff;
+	border-radius: 0;
+	font-size: 16px;
+	font-weight: 300;
+	letter-spacing: 1px;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	margin-top: 20px;
+}
+
+form input[type="submit"]:hover {
+	background-color: rgba(255, 255, 255, 0.1) !important;
+	border-color: #fff;
+	color: #fff;
+}
+
+/* "Show password" button styling */
+form button[type="button"] {
+	background: none !important;
+	border: none;
+	cursor: pointer;
+	position: absolute;
+	right: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 14px;
+	color: #ccc;
+	padding: 0.2rem 0.4rem;
+}
+
+form button[type="button"]:hover {
+	color: #fff;
+}
+
+/* Icon styling */
+form i {
+	font-size: 18px;
+}
+
+/* Form element alignment styling */
+.pf-c-input-group {
+	position: relative;
+}
+
+#kc-form-options,
+#kc-form-buttons {
+	text-align: center;
+}
+
+.back-to-login {
+	text-align: center;
+	margin-top: 20px;
+	font-size: 15px;
+}
+
+#kc-page-title {
+	color: white;
+	text-align: center;
+	font-weight: 300;
+	font-size: 24px;
+	letter-spacing: 1px;
+	margin-bottom: 40px;
+}
+
+#kc-info {
+	text-align: center;
+}
+
+/* Page background styling */
+body {
+	background-color: #111;
+	margin: 0;
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+}
+
+.main-content {
+	flex: 1;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+/* main_content mobile */
+@media (max-width: 600px) {
+	.main-content {
+		display: block;
+	}
+}
+
+.app-header {
+	display: none;
+	justify-content: space-between;
+	align-items: center;
+	background-color: #1e1e2f;
+	padding: 1rem 2rem;
+	border-bottom: 1px solid #2a2a3b;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+	color: #f1f1f1;
+	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.pf-c-input-group {
+	position: relative;
+	background: transparent;
+
+	.pf-m-control::after {
+		border: none;
+	}
+}
+
+.login-pf-page .login-pf-settings {
+	font-size: 15px;
+}
+
+.pf-c-form-control:not(textarea) {
+	height: initial;
+}
+
+.pf-c-form-control[aria-invalid="true"] {
+	border: none !important;
+	border-bottom: 1px solid red !important;
+	background: transparent !important;
+	border-radius: 0 !important;
+}
+
+.login-pf-page .login-pf-signup {
+	margin: 0;
+}
+
+.login-pf-page .card-pf * {
+	color: white !important;
+}
+
+.login-pf .card-pf {
+	flex: 1;
+	padding: 0;
+	margin: 0;
+	overflow-y: auto;
+    height: 100vh;
+	align-content: center;
+}
+
+@media screen and (max-width: 600px) {
+	.login-pf .card-pf {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		background: #0008;
+	}
+}
+
+.login-pf-page {
+	padding: 0;
+}
+
+.login-pf #kc-form-image {
+	flex: 0 0 auto;
+	display: flex;
+}
+
+.login-pf #kc-form-image img {
+	height: 100vh;
+	object-fit: cover;
+}
+
+
+.login-pf,
+.login-pf body {
+	background: #111;
+	height: 100%;
+	margin: 0;
+}
+
+.pf-c-alert {
+	display: flex;
+	align-items: center;
+	background-color: transparent;
+	border-left: 4px solid #ffaa00;
+	padding: 10px;
+	border-radius: 5px;
+	margin-bottom: 20px;
+}
+
+.pf-c-alert__icon {
+	margin-right: 10px;
+	font-size: 1.5rem;
+	color: #ffaa00;
+}
+
+.kc-feedback-text {
+	font-weight: bold;
+}
+
+.instruction {
+	color: #fff;
+	font-size: 1rem;
+	text-align: center;
+	margin-bottom: 15px;
+}
+
+

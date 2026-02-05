@@ -1,0 +1,22 @@
+server:
+  port: 5080
+
+spring:
+  application:
+    name: ka-gateway
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: backend
+              uri: ${BACK_URL:http://localhost:5027}
+              predicates:
+                - Path=/api/**
+              filters:
+                - StripPrefix=1
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER:http://host.docker.internal:5028/realms/kastarter}
